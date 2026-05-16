@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+  font-family: 'Press Start 2P', system-ui;
+  background-color: #18181b;
+  color: white;
+  min-height: 100vh;
+}
+
+.dice {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dice:hover {
+  transform: scale(1.1) rotate(15deg);
+}
+
+.rolling {
+  animation: roll 0.8s infinite linear;
+}
+
+@keyframes roll {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.result {
+  animation: pop 0.6s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.tab-btn.active {
+  background-color: rgb(126 34 206);
+  color: white;
+}
+
+/* Rarity Glows */
+.rarity-mythic { text-shadow: 0 0 20px #ec4899; }
+.rarity-legendary { text-shadow: 0 0 20px #eab308; }
