@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AETHER DICE</title>
+  <title>AETHER DICE v0.0.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
@@ -16,7 +16,7 @@
         <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-3xl shadow-lg shadow-purple-500/50">🎲</div>
         <div>
           <h1 class="text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AETHER DICE</h1>
-          <p class="text-xs text-purple-400">ROLL • COLLECT • ASCEND</p>
+          <p class="text-xs text-purple-400">v0.0.1 • ROLL • COLLECT • ASCEND</p>
         </div>
       </div>
       
@@ -33,7 +33,7 @@
         
         <div class="bg-zinc-900 px-6 py-3 rounded-2xl flex items-center gap-3 border border-yellow-400">
           <i class="fa-solid fa-coins text-yellow-400"></i>
-          <span id="coin-display" class="font-mono text-2xl font-bold text-yellow-400">482</span>
+          <span id="coin-display" class="font-mono text-2xl font-bold text-yellow-400">0</span>
         </div>
       </div>
     </div>
@@ -54,12 +54,7 @@
             </button>
           </div>
           
-          <div id="result" class="mt-10 min-h-[180px] w-full max-w-md text-center result hidden">
-            <div id="rarity" class="text-2xl font-bold mb-2"></div>
-            <div id="item-name" class="text-4xl font-bold mb-1"></div>
-            <div id="item-desc" class="text-zinc-400 mb-4"></div>
-            <div id="reward" class="bg-yellow-400 text-zinc-900 px-8 py-3 rounded-2xl font-mono font-bold inline-block"></div>
-          </div>
+          <div id="result" class="mt-10 min-h-[200px] w-full max-w-md text-center result hidden"></div>
         </div>
 
         <div class="w-full lg:w-96 bg-zinc-900/70 border border-purple-500/30 rounded-3xl p-6">
@@ -67,11 +62,11 @@
           <div class="space-y-4">
             <div class="flex justify-between bg-zinc-800 p-4 rounded-2xl">
               <div class="text-zinc-400">Total Rolls</div>
-              <div id="total-rolls" class="font-mono">37</div>
+              <div id="total-rolls" class="font-mono">0</div>
             </div>
             <div class="flex justify-between bg-zinc-800 p-4 rounded-2xl">
               <div class="text-zinc-400">Best Pull</div>
-              <div id="best-pull" class="text-yellow-400 font-bold">12,500</div>
+              <div id="best-pull" class="text-yellow-400 font-bold">0</div>
             </div>
             <div class="flex justify-between bg-zinc-800 p-4 rounded-2xl">
               <div class="text-zinc-400">Current Multiplier</div>

@@ -38,6 +38,5 @@ body {
   color: white;
 }
 
-/* Rarity Glows */
-.rarity-mythic { text-shadow: 0 0 20px #ec4899; }
-.rarity-legendary { text-shadow: 0 0 20px #eab308; }
+.rarity-mythic { text-shadow: 0 0 25px #ec4899; }
+.rarity-legendary { text-shadow: 0 0 25px #eab308; }
