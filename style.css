@@ -40,3 +40,39 @@ body {
 
 .rarity-mythic { text-shadow: 0 0 25px #ec4899; }
 .rarity-legendary { text-shadow: 0 0 25px #eab308; }
+
+.achievement-card {
+  transition: all 0.3s ease;
+}
+
+.achievement-card.unlocked {
+  border-color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.shop-card {
+  background-color: #27251f;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.shop-card:hover {
+  border-color: rgb(168 85 247);
+  transform: translateY(-2px);
+}
+
+.shop-btn {
+  background-color: #3f3e3a;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shop-btn:hover {
+  background-color: rgb(126 34 206);
+}
