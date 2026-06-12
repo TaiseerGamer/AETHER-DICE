@@ -76,3 +76,34 @@ body {
 .shop-btn:hover {
   background-color: rgb(126 34 206);
 }
+
+/* Collection cards */
+.collection-card {
+  background-color: #27251f;
+  border: 1px solid #3f3e3a;
+  border-radius: 1rem;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.collection-card:hover {
+  border-color: #a855f7;
+  transform: scale(1.02);
+}
+
+/* Confetti */
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: confetti-fall 3s linear forwards;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
