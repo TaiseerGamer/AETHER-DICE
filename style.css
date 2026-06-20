@@ -77,7 +77,6 @@ body {
   background-color: rgb(126 34 206);
 }
 
-/* Collection cards */
 .collection-card {
   background-color: #27251f;
   border: 1px solid #3f3e3a;
@@ -91,7 +90,6 @@ body {
   transform: scale(1.02);
 }
 
-/* Confetti */
 .confetti {
   position: fixed;
   width: 10px;
@@ -106,4 +104,19 @@ body {
     transform: translateY(100vh) rotate(720deg);
     opacity: 0;
   }
+}
+
+.ascension-btn {
+  background-color: #4c1d95;
+  transition: all 0.2s;
+}
+
+.ascension-btn:hover {
+  background-color: #6b21a8;
+}
+
+.ascension-btn:disabled {
+  background-color: #3f3e3a;
+  cursor: not-allowed;
+  opacity: 0.6;
 }

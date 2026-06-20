@@ -1,5 +1,5 @@
-// ====================== AETHER DICE v0.0.3 ======================
-// New: Daily Rewards + Collection + Polish + Confetti
+// ====================== AETHER DICE v0.1.0 ======================
+// Major update: Settings + Ascension Points + Ascension Shop + More Achievements
 
 let coins = 482;
 let totalRolls = 37;
@@ -7,6 +7,7 @@ let bestPull = 12500;
 let lifetimeCoins = 12500;
 let prestigeLevel = 0;
 let prestigeMultiplier = 1.0;
+let ascensionPoints = 0;
 let multiplier = 1.0;
 
 let upgrades = {
@@ -18,13 +19,11 @@ let upgrades = {
 
 let history = [];
 let unlockedAchievements = [];
-let collection = new Set(); // unique item names
+let collection = new Set();
 
-// Daily reward
 let lastClaimDate = null;
 let dailyStreak = 0;
 
-// Sound
 let soundEnabled = true;
 let audioContext = null;
 
@@ -46,30 +45,23 @@ function playSound(type) {
     gain.gain.value = 0.4;
 
     if (type === 'roll') {
-      osc.frequency.value = 520;
-      gain.gain.value = 0.25;
-      filter.type = 'lowpass';
-      filter.frequency.value = 1200;
+      osc.frequency.value = 520; gain.gain.value = 0.25;
+      filter.type = 'lowpass'; filter.frequency.value = 1200;
     } else if (type === 'critical') {
-      osc.frequency.value = 880;
-      gain.gain.value = 0.6;
-      osc.type = 'sawtooth';
+      osc.frequency.value = 880; gain.gain.value = 0.6; osc.type = 'sawtooth';
     } else if (type === 'buy') {
-      osc.frequency.value = 660;
-      gain.gain.value = 0.35;
+      osc.frequency.value = 660; gain.gain.value = 0.35;
     } else if (type === 'prestige') {
-      osc.frequency.value = 300;
-      gain.gain.value = 0.5;
-      osc.type = 'triangle';
+      osc.frequency.value = 300; gain.gain.value = 0.5; osc.type = 'triangle';
     } else if (type === 'daily') {
-      osc.frequency.value = 750;
-      gain.gain.value = 0.4;
+      osc.frequency.value = 750; gain.gain.value = 0.4;
+    } else if (type === 'ascension') {
+      osc.frequency.value = 950; gain.gain.value = 0.5;
     }
 
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(audioContext.destination);
-
     osc.start();
 
     setTimeout(() => {
@@ -91,21 +83,21 @@ function createConfetti(count = 80) {
     conf.style.height = conf.style.width;
     conf.style.transform = `rotate(${Math.random() * 360}deg)`;
     document.body.appendChild(conf);
-
-    setTimeout(() => {
-      if (conf.parentNode) conf.parentNode.removeChild(conf);
-    }, 3500);
+    setTimeout(() => { if (conf.parentNode) conf.parentNode.removeChild(conf); }, 3500);
   }
 }
 
-// Achievements
+// Achievements (expanded for v0.1.0)
 const achievementsList = [
   { id: 'first_roll', name: 'First Steps', desc: 'Roll the Aether Dice for the first time', icon: '🎲' },
   { id: 'rare_find', name: 'Rare Find', desc: 'Obtain a Rare or higher rarity artifact', icon: '🔵' },
   { id: 'epic_collector', name: 'Epic Collector', desc: 'Obtain an Epic or higher rarity artifact', icon: '🟣' },
   { id: 'mythic_master', name: 'Mythic Master', desc: 'Obtain a Mythic artifact', icon: '🌸' },
   { id: 'big_spender', name: 'Big Spender', desc: 'Purchase a total of 5 upgrades', icon: '💰' },
-  { id: 'prestigious', name: 'Prestigious', desc: 'Perform your first Prestige reset', icon: '✨' }
+  { id: 'prestigious', name: 'Prestigious', desc: 'Perform your first Prestige reset', icon: '✨' },
+  { id: 'daily_streak_7', name: 'Weekly Warrior', desc: 'Reach a 7-day daily reward streak', icon: '📅' },
+  { id: 'collection_20', name: 'Collector', desc: 'Collect 20 unique artifacts', icon: '📚' },
+  { id: 'ascend_5', name: 'Ascended', desc: 'Reach Prestige Level 5', icon: '🌌' }
 ];
 
 const rarities = [
@@ -120,6 +112,13 @@ const rarities = [
 const prefixes = ["Void", "Celestial", "Eternal", "Shadow", "Radiant", "Chaos", "Astral", "Primal", "Divine", "Forgotten"];
 const elements = ["Flame", "Frost", "Storm", "Arcane", "Abyssal", "Solar", "Lunar", "Verdant", "Thunder", "Blood"];
 const items = ["Blade", "Orb", "Amulet", "Crown", "Rune", "Crystal", "Essence", "Relic", "Sigil", "Echo"];
+
+// Ascension Shop items
+let ascensionShop = [
+  { id: 'global_multi', name: 'Eternal Blessing', desc: '+20% permanent global multiplier', cost: 5, effect: () => { prestigeMultiplier += 0.2; } },
+  { id: 'auto_speed', name: 'Faster Spin', desc: 'Auto-roll every 5 seconds', cost: 8, effect: () => { /* handled in interval */ } },
+  { id: 'luck_permanent', name: 'Divine Luck', desc: 'Permanent +5% luck', cost: 12, effect: () => { upgrades.luck.effect += 0.05; } }
+];
 
 function getRandomItem() {
   return `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${elements[Math.floor(Math.random()*elements.length)]} ${items[Math.floor(Math.random()*items.length)]}`;
@@ -138,16 +137,17 @@ function calculateProbabilities() {
 function saveGame() {
   const gameData = {
     coins, totalRolls, bestPull, lifetimeCoins,
-    prestigeLevel, prestigeMultiplier, multiplier,
+    prestigeLevel, prestigeMultiplier, ascensionPoints,
     upgrades, history, unlockedAchievements,
     collection: Array.from(collection),
-    lastClaimDate, dailyStreak, soundEnabled
+    lastClaimDate, dailyStreak, soundEnabled,
+    ascensionShopPurchased: ascensionShop.map(s => s.id) // track bought
   };
-  localStorage.setItem('aetherDiceSave_v0.0.3', JSON.stringify(gameData));
+  localStorage.setItem('aetherDiceSave_v0.1.0', JSON.stringify(gameData));
 }
 
 function loadGame() {
-  const saved = localStorage.getItem('aetherDiceSave_v0.0.3');
+  const saved = localStorage.getItem('aetherDiceSave_v0.1.0');
   if (saved) {
     const data = JSON.parse(saved);
     coins = data.coins || 482;
@@ -156,7 +156,7 @@ function loadGame() {
     lifetimeCoins = data.lifetimeCoins || 0;
     prestigeLevel = data.prestigeLevel || 0;
     prestigeMultiplier = data.prestigeMultiplier || 1.0;
-    multiplier = data.multiplier || 1.0;
+    ascensionPoints = data.ascensionPoints || 0;
     upgrades = data.upgrades || upgrades;
     history = data.history || [];
     unlockedAchievements = data.unlockedAchievements || [];
@@ -164,34 +164,36 @@ function loadGame() {
     lastClaimDate = data.lastClaimDate || null;
     dailyStreak = data.dailyStreak || 0;
     soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
+
+    // Restore purchased ascension items
+    if (data.ascensionShopPurchased) {
+      data.ascensionShopPurchased.forEach(id => {
+        const item = ascensionShop.find(s => s.id === id);
+        if (item && !item.purchased) {
+          item.purchased = true;
+          item.effect();
+        }
+      });
+    }
   }
 }
 
 function checkAchievements() {
   let newUnlocks = false;
 
-  if (totalRolls >= 1 && !unlockedAchievements.includes('first_roll')) {
-    unlockAchievement('first_roll'); newUnlocks = true;
-  }
+  if (totalRolls >= 1 && !unlockedAchievements.includes('first_roll')) { unlockAchievement('first_roll'); newUnlocks = true; }
   const hasRareOrHigher = history.some(h => ['RARE','EPIC','LEGENDARY','MYTHIC'].includes(h.rarity));
-  if (hasRareOrHigher && !unlockedAchievements.includes('rare_find')) {
-    unlockAchievement('rare_find'); newUnlocks = true;
-  }
+  if (hasRareOrHigher && !unlockedAchievements.includes('rare_find')) { unlockAchievement('rare_find'); newUnlocks = true; }
   const hasEpicOrHigher = history.some(h => ['EPIC','LEGENDARY','MYTHIC'].includes(h.rarity));
-  if (hasEpicOrHigher && !unlockedAchievements.includes('epic_collector')) {
-    unlockAchievement('epic_collector'); newUnlocks = true;
-  }
+  if (hasEpicOrHigher && !unlockedAchievements.includes('epic_collector')) { unlockAchievement('epic_collector'); newUnlocks = true; }
   const hasMythic = history.some(h => h.rarity === 'MYTHIC');
-  if (hasMythic && !unlockedAchievements.includes('mythic_master')) {
-    unlockAchievement('mythic_master'); newUnlocks = true;
-  }
+  if (hasMythic && !unlockedAchievements.includes('mythic_master')) { unlockAchievement('mythic_master'); newUnlocks = true; }
   const totalUpgrades = Object.values(upgrades).reduce((sum, u) => sum + u.level, 0);
-  if (totalUpgrades >= 5 && !unlockedAchievements.includes('big_spender')) {
-    unlockAchievement('big_spender'); newUnlocks = true;
-  }
-  if (prestigeLevel >= 1 && !unlockedAchievements.includes('prestigious')) {
-    unlockAchievement('prestigious'); newUnlocks = true;
-  }
+  if (totalUpgrades >= 5 && !unlockedAchievements.includes('big_spender')) { unlockAchievement('big_spender'); newUnlocks = true; }
+  if (prestigeLevel >= 1 && !unlockedAchievements.includes('prestigious')) { unlockAchievement('prestigious'); newUnlocks = true; }
+  if (dailyStreak >= 7 && !unlockedAchievements.includes('daily_streak_7')) { unlockAchievement('daily_streak_7'); newUnlocks = true; }
+  if (collection.size >= 20 && !unlockedAchievements.includes('collection_20')) { unlockAchievement('collection_20'); newUnlocks = true; }
+  if (prestigeLevel >= 5 && !unlockedAchievements.includes('ascend_5')) { unlockAchievement('ascend_5'); newUnlocks = true; }
 
   if (newUnlocks) {
     renderAchievements();
@@ -216,7 +218,6 @@ function unlockAchievement(id) {
 function renderAchievements() {
   const container = document.getElementById('achievements-list');
   if (!container) return;
-
   container.innerHTML = achievementsList.map(ach => {
     const isUnlocked = unlockedAchievements.includes(ach.id);
     return `
@@ -267,16 +268,11 @@ function rollDice() {
     if (wasNew) collection.add(itemName);
 
     const rollData = { rarity: selected.name, item: itemName, reward: reward, critical: isCritical };
-    
     history.unshift(rollData);
     if (history.length > 25) history.pop();
 
     if (isCritical) playSound('critical');
-
-    // Confetti for big moments
-    if (selected.name === 'MYTHIC' || isCritical || reward >= 10000) {
-      createConfetti(120);
-    }
+    if (selected.name === 'MYTHIC' || isCritical || reward >= 10000) createConfetti(120);
 
     showResult(selected, itemName, reward, isCritical, wasNew);
     updateUI();
@@ -288,8 +284,7 @@ function rollDice() {
 function showResult(rarity, itemName, reward, critical, wasNew) {
   const resultEl = document.getElementById('result');
   resultEl.classList.remove('hidden');
-  let extra = '';
-  if (wasNew) extra = `<div class="text-emerald-400 text-sm mt-1">✨ New in Collection!</div>`;
+  let extra = wasNew ? `<div class="text-emerald-400 text-sm mt-1">✨ New in Collection!</div>` : '';
 
   resultEl.innerHTML = `
     <div class="${critical || rarity.name === 'MYTHIC' ? 'rarity-mythic' : ''}">
@@ -315,7 +310,6 @@ function updateUI() {
   const currentMulti = (prestigeMultiplier * (1 + upgrades.multi.level * 0.3)).toFixed(1);
   document.getElementById('multiplier-display').textContent = currentMulti + "x";
 
-  // Daily streak
   const streakEl = document.getElementById('daily-streak');
   if (streakEl) streakEl.textContent = `Streak: ${dailyStreak}`;
 
@@ -331,10 +325,15 @@ function updateUI() {
     }
   }
 
+  // Ascension points in settings
+  const apEl = document.getElementById('ascension-points');
+  if (apEl) apEl.textContent = ascensionPoints;
+
   renderShop();
   renderHistory();
   renderAchievements();
   renderCollection();
+  renderAscensionShop();
 }
 
 function renderShop() {
@@ -370,14 +369,10 @@ function buyUpgrade(type) {
   const upg = upgrades[type];
   const cost = Math.floor(upg.cost * Math.pow(type === 'auto' ? 2 : type === 'charm' ? 1.8 : 1.65, upg.level));
 
-  if (coins < cost) {
-    alert("Not enough Aether Coins!");
-    return;
-  }
+  if (coins < cost) { alert("Not enough Aether Coins!"); return; }
 
   coins -= cost;
   upg.level++;
-
   playSound('buy');
   checkAchievements();
   updateUI();
@@ -408,8 +403,7 @@ function renderCollection() {
   const countEl = document.getElementById('collection-count');
   if (!container || !countEl) return;
 
-  const totalPossible = 60;
-  countEl.textContent = `${collection.size} / ${totalPossible}`;
+  countEl.textContent = `${collection.size} / 60`;
 
   if (collection.size === 0) {
     container.innerHTML = `<div class="col-span-full text-center text-zinc-400 py-8">No artifacts collected yet. Keep rolling!</div>`;
@@ -418,8 +412,7 @@ function renderCollection() {
 
   let html = '';
   collection.forEach(itemName => {
-    let rarityColor = '#a1a1aa';
-    let rarityName = 'COMMON';
+    let rarityColor = '#a1a1aa', rarityName = 'COMMON';
     for (let h of history) {
       if (h.item === itemName) {
         const r = rarities.find(r => r.name === h.rarity);
@@ -436,24 +429,48 @@ function renderCollection() {
   container.innerHTML = html;
 }
 
+function renderAscensionShop() {
+  const container = document.getElementById('ascension-shop');
+  if (!container) return;
+
+  container.innerHTML = ascensionShop.map(item => {
+    const canBuy = ascensionPoints >= item.cost && !item.purchased;
+    return `
+      <div class="flex justify-between items-center bg-zinc-800 p-3 rounded-2xl">
+        <div>
+          <div class="font-bold">${item.name}</div>
+          <div class="text-xs text-zinc-400">${item.desc}</div>
+        </div>
+        <button onclick="buyAscensionItem('${item.id}')" 
+                class="ascension-btn px-4 py-2 text-sm font-bold rounded-xl ${canBuy ? '' : 'disabled'}"
+                ${canBuy ? '' : 'disabled'}>
+          ${item.purchased ? 'OWNED' : item.cost + ' AP'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function buyAscensionItem(id) {
+  const item = ascensionShop.find(s => s.id === id);
+  if (!item || item.purchased || ascensionPoints < item.cost) return;
+
+  ascensionPoints -= item.cost;
+  item.purchased = true;
+  item.effect();
+
+  playSound('ascension');
+  createConfetti(40);
+  updateUI();
+  saveGame();
+}
+
 function claimDailyReward() {
   const today = new Date().toDateString();
-  const statusEl = document.getElementById('daily-status');
+  if (lastClaimDate === today) { alert("Already claimed today!"); return; }
 
-  if (lastClaimDate === today) {
-    alert("You've already claimed today's reward!");
-    return;
-  }
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yestStr = yesterday.toDateString();
-
-  if (lastClaimDate === yestStr) {
-    dailyStreak++;
-  } else {
-    dailyStreak = 1;
-  }
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  if (lastClaimDate === yesterday.toDateString()) dailyStreak++; else dailyStreak = 1;
 
   const reward = 500 + (dailyStreak * 150);
   coins += reward;
@@ -462,34 +479,24 @@ function claimDailyReward() {
 
   playSound('daily');
   createConfetti(60);
-
-  if (statusEl) {
-    statusEl.textContent = `Claimed! +${reward} coins`;
-    statusEl.style.color = '#4ade80';
-  }
-
   updateUI();
   checkAchievements();
   saveGame();
 }
 
 function doPrestige() {
-  if (prestigeLevel >= 10) {
-    alert("Maximum prestige level reached!");
-    return;
-  }
+  if (prestigeLevel >= 15) { alert("Max Prestige reached!"); return; }
 
-  const confirmMsg = `Are you sure you want to Prestige?\n\nThis will reset:\n• Coins\n• Upgrades\n• Rolls & History\n\nBut you will gain a permanent +50% multiplier bonus (current: ${prestigeLevel} → ${prestigeLevel + 1})`;
+  const confirmMsg = `Prestige now?\n\nGain ${Math.floor(lifetimeCoins / 10000) + 1} Ascension Points\nReset progress for permanent bonus`;
 
   if (confirm(confirmMsg)) {
+    const pointsGained = Math.floor(lifetimeCoins / 10000) + 1;
+    ascensionPoints += pointsGained;
     prestigeLevel++;
     prestigeMultiplier = 1 + (prestigeLevel * 0.5);
 
-    coins = 0;
-    totalRolls = 0;
-    bestPull = 0;
-    history = [];
-    
+    coins = 0; totalRolls = 0; bestPull = 0; history = [];
+
     upgrades = {
       luck: { level: 0, cost: 280, effect: 1.06 },
       multi: { level: 0, cost: 750, effect: 1.25 },
@@ -508,15 +515,23 @@ function doPrestige() {
     resultEl.innerHTML = `
       <div class="rarity-mythic">
         <div class="text-4xl font-bold mb-2 text-purple-400">PRESTIGE COMPLETE!</div>
-        <div class="text-2xl">New Prestige Level: <span class="text-pink-400">${prestigeLevel}</span></div>
-        <div class="mt-3 text-emerald-400">Permanent Multiplier Bonus Applied!</div>
+        <div class="text-2xl">+${pointsGained} Ascension Points</div>
+        <div class="mt-2 text-emerald-400">New Prestige Level: ${prestigeLevel}</div>
       </div>
     `;
-    setTimeout(() => {
-      if (!document.getElementById('tab-0').classList.contains('hidden')) {
-        resultEl.classList.add('hidden');
-      }
-    }, 5500);
+    setTimeout(() => { if (!document.getElementById('tab-0').classList.contains('hidden')) resultEl.classList.add('hidden'); }, 5500);
+  }
+}
+
+function toggleSound() {
+  soundEnabled = document.getElementById('sound-toggle').checked;
+  saveGame();
+}
+
+function resetGame() {
+  if (confirm("Reset ALL progress? This cannot be undone.")) {
+    localStorage.removeItem('aetherDiceSave_v0.1.0');
+    location.reload();
   }
 }
 
@@ -530,11 +545,17 @@ function switchTab(n) {
 
   if (n === 2) renderAchievements();
   if (n === 3) renderCollection();
+  if (n === 5) {
+    const toggle = document.getElementById('sound-toggle');
+    if (toggle) toggle.checked = soundEnabled;
+    renderAscensionShop();
+  }
 }
 
-// Auto Roll
+// Auto Roll (with possible speed upgrade from ascension)
 setInterval(() => {
   if (upgrades.auto.level > 0) {
+    const speed = ascensionShop.find(s => s.id === 'auto_speed' && s.purchased) ? 5000 : 7000;
     rollDice();
   }
 }, 7000);
@@ -542,14 +563,17 @@ setInterval(() => {
 // Initialize
 window.onload = () => {
   loadGame();
-  
+
   if (prestigeLevel > 0 && prestigeMultiplier === 1.0) {
     prestigeMultiplier = 1 + (prestigeLevel * 0.5);
   }
 
   updateUI();
   switchTab(0);
-  
+
+  const toggle = document.getElementById('sound-toggle');
+  if (toggle) toggle.checked = soundEnabled;
+
   if (totalRolls === 0) {
     setTimeout(() => rollDice(), 900);
   }
